@@ -7,14 +7,15 @@ const childProcess = require('child_process');
 
 const RSS_FEED = `https://www.youtube.com/feeds/videos.xml?channel_id=${process.env.YOUTUBE_CHANNEL_ID}`;
 
-const db = level('database');
 const parser = new Parser();
 
 checkYouTubeChannel();
 setInterval(checkYouTubeChannel, process.env.INTERVAL_MS);
 
 async function checkYouTubeChannel() {
+	const db = level('database');
 	const feed = await parser.parseURL(RSS_FEED);
+
 	const mostRecent = feed.items[0].link;
 	await db.put('mostRecent', mostRecent);
 	let lastSeen;
@@ -29,6 +30,8 @@ async function checkYouTubeChannel() {
 			throw err;
 		}
 	}
+	await db.close();
+
 	let newVideos = 0;
 	for (const item of feed.items) {
 		if (item.link === lastSeen) {
@@ -36,6 +39,7 @@ async function checkYouTubeChannel() {
 		}
 		newVideos++;
 	}
+
 	const color = chooseColor(newVideos);
 	await blink(color);
 }
