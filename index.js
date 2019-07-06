@@ -13,35 +13,39 @@ checkYouTubeChannel();
 setInterval(checkYouTubeChannel, process.env.INTERVAL_MS);
 
 async function checkYouTubeChannel() {
-	const db = level('database');
-	const feed = await parser.parseURL(RSS_FEED);
-
-	const mostRecent = feed.items[0].link;
-	await db.put('mostRecent', mostRecent);
-	let lastSeen;
 	try {
-		lastSeen = await db.get('lastSeen');
+		const db = level('database');
+		const feed = await parser.parseURL(RSS_FEED);
+
+		const mostRecent = feed.items[0].link;
+		await db.put('mostRecent', mostRecent);
+		let lastSeen;
+		try {
+			lastSeen = await db.get('lastSeen');
+		} catch (err) {
+			if (err.notFound) {
+				console.log('created database');
+				lastSeen = mostRecent;
+				await db.put('lastSeen', mostRecent);
+			} else {
+				throw err;
+			}
+		}
+		await db.close();
+
+		let newVideos = 0;
+		for (const item of feed.items) {
+			if (item.link === lastSeen) {
+				break;
+			}
+			newVideos++;
+		}
+
+		const color = chooseColor(newVideos);
+		await blink(color);
 	} catch (err) {
-		if (err.notFound) {
-			console.log('created database');
-			lastSeen = mostRecent;
-			await db.put('lastSeen', mostRecent);
-		} else {
-			throw err;
-		}
+		console.error(err);
 	}
-	await db.close();
-
-	let newVideos = 0;
-	for (const item of feed.items) {
-		if (item.link === lastSeen) {
-			break;
-		}
-		newVideos++;
-	}
-
-	const color = chooseColor(newVideos);
-	await blink(color);
 }
 
 function chooseColor(newVideos) {
