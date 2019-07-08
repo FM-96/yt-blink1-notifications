@@ -13,8 +13,9 @@ checkYouTubeChannel();
 setInterval(checkYouTubeChannel, process.env.INTERVAL_MS);
 
 async function checkYouTubeChannel() {
+	let db;
 	try {
-		const db = await openDatabase('database');
+		db = await openDatabase('database');
 		const feed = await parser.parseURL(RSS_FEED);
 
 		const mostRecent = feed.items[0].link;
@@ -45,6 +46,11 @@ async function checkYouTubeChannel() {
 		await blink(color);
 	} catch (err) {
 		console.error(err);
+		try {
+			await db.close();
+		} catch (e) {
+			// do nothing
+		}
 	}
 }
 
