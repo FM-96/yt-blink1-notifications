@@ -18,21 +18,23 @@ async function checkYouTubeChannel() {
 		db = await openDatabase('database');
 		const feed = await parser.parseURL(RSS_FEED);
 
-		const mostRecent = feed.items[0].link;
-		await db.put('mostRecent', mostRecent);
 		let lastSeen;
-		try {
-			lastSeen = await db.get('lastSeen');
-		} catch (err) {
-			if (err.notFound) {
-				console.log('created database');
-				lastSeen = mostRecent;
-				await db.put('lastSeen', mostRecent);
-			} else {
-				throw err;
+		if (feed.items.length) {
+			const mostRecent = feed.items[0].link;
+			await db.put('mostRecent', mostRecent);
+			try {
+				lastSeen = await db.get('lastSeen');
+			} catch (err) {
+				if (err.notFound) {
+					console.log('created database');
+					lastSeen = mostRecent;
+					await db.put('lastSeen', mostRecent);
+				} else {
+					throw err;
+				}
 			}
+			await db.close();
 		}
-		await db.close();
 
 		let newVideos = 0;
 		for (const item of feed.items) {
