@@ -85,7 +85,7 @@ function chooseColor(newVideos) {
 
 function blink(color) {
 	return new Promise(function (resolve, reject) {
-		childProcess.exec(`blink1-tool.exe --rgb ${color}`, (err, stdout, stderr) => {
+		childProcess.exec(`blink1-tool.exe --rgb ${color} -l ${process.env.LED || 0}`, (err, stdout, stderr) => {
 			if (err) {
 				reject(err);
 				return;
